@@ -1,0 +1,11 @@
+# WolfRanger Configuration file!
+# @author hinadamari
+
+# rate of absorption
+blue: 0.5
+# rate of critical hit
+black: 0.2
+# scale factor of damage
+red: 2
+# rate of drop (melon)
+green: 0.3

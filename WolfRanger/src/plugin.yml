@@ -1,0 +1,12 @@
+##  Plugin Information  ##
+name: WolfRanger
+version: version-number-unknown
+main: hinadamari.wolfranger.WolfRanger
+##  Original Author     ##
+author: hinadamari
+##  Command             ##
+commands:
+    wolfranger:
+        description: Reloads the WolfRanger configuration file.
+        usage: /wolfranger reload
+        aliases: [wran]
