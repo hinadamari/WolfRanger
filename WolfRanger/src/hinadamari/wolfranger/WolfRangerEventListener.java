@@ -1,5 +1,6 @@
 package hinadamari.wolfranger;
 
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import org.bukkit.DyeColor;
@@ -24,7 +25,7 @@ public class WolfRangerEventListener implements Listener
 {
     public WolfRanger plugin;
     public final static Logger log = Logger.getLogger("Minecraft");
-    public boolean eventflg = false;
+    public ArrayList<Integer> eventflg = new ArrayList<Integer>();
 
     public WolfRangerEventListener(WolfRanger instance)
     {
@@ -38,7 +39,7 @@ public class WolfRangerEventListener implements Listener
     @EventHandler(priority= EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityAttack(EntityDamageByEntityEvent event) {
 
-        if (eventflg) return;
+        if (eventflg.contains(event.getDamager().getEntityId())) return;
 
         if (event.getDamager().getType() == EntityType.WOLF  && event.getCause() == DamageCause.ENTITY_ATTACK) {
 
@@ -59,7 +60,7 @@ public class WolfRangerEventListener implements Listener
                 case PURPLE:
                     // 与えたダメージに比例して体力を回復
                     if (attacker.getHealth() == attacker.getMaxHealth()) break; // 体力がMAXなら中止
-                    rate = plugin.config.get(DyeColor.BLUE);
+                    rate = WolfRanger.getConfigData().get(DyeColor.BLUE);
                     if (rate == 0) break;
                     attacker.setHealth(Math.min(attacker.getMaxHealth(), attacker.getHealth() + (int)Math.floor(event.getDamage() * rate)));
             }
@@ -70,11 +71,11 @@ public class WolfRangerEventListener implements Listener
                 case SILVER:
                     // 敵に致命的な追加ダメージ
                     if (enemy.getHealth() - event.getDamage() <= 0) break; // 敵死亡時は中止
-                    rate = plugin.config.get(DyeColor.BLACK);
+                    rate = WolfRanger.getConfigData().get(DyeColor.BLACK);
                     if (rate == 0 || Math.random() > rate) break; // 当たり抽選
-                    eventflg = true;
+                    eventflg.add(event.getDamager().getEntityId());
                     enemy.damage(1000, attacker);
-                    eventflg = false;
+                    eventflg.remove(eventflg.indexOf(event.getDamager().getEntityId()));
             }
 
             switch (attacker.getCollarColor()) {
@@ -82,9 +83,9 @@ public class WolfRangerEventListener implements Listener
                 case YELLOW:
                     // 敵に着火
                     if (enemy.getHealth() - event.getDamage() <= 0) break; // 敵死亡時は中止
-                    eventflg = true;
+                    eventflg.add(event.getDamager().getEntityId());
                     enemy.setFireTicks(100);
-                    eventflg = false;
+                    eventflg.remove(eventflg.indexOf(event.getDamager().getEntityId()));
             }
 
             switch (attacker.getCollarColor()) {
@@ -95,11 +96,11 @@ public class WolfRangerEventListener implements Listener
                 case RED:
                     // 敵に追加ダメージ
                     if (enemy.getHealth() - event.getDamage() <= 0) break; // 敵死亡時は中止
-                    rate = plugin.config.get(DyeColor.RED);
+                    rate = WolfRanger.getConfigData().get(DyeColor.RED);
                     if (rate == 1) break;
-                    eventflg = true;
-                    enemy.damage((int)Math.floor(event.getDamage() * (rate - 1)), attacker);
-                    eventflg = false;
+                    eventflg.add(event.getDamager().getEntityId());
+                    enemy.damage((int)Math.floor(event.getDamage() * rate), attacker);
+                    eventflg.remove(eventflg.indexOf(event.getDamager().getEntityId()));
             }
 
             switch (attacker.getCollarColor()) {
@@ -108,7 +109,7 @@ public class WolfRangerEventListener implements Listener
                 case LIME:
                     // メロンを落とさせる
                     if (enemy.getHealth() - event.getDamage() > 0) break; // 敵死亡時のみ処理を続ける
-                    rate = plugin.config.get(DyeColor.GREEN);
+                    rate = WolfRanger.getConfigData().get(DyeColor.GREEN);
                     if (rate == 0 || Math.random() > rate) break; // 当たり抽選
                     ItemStack drop = new ItemStack(Material.MELON_BLOCK, 1);
                     World world = enemy.getWorld();

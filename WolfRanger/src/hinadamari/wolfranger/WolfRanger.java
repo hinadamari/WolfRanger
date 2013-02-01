@@ -11,15 +11,22 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.plugin.java.JavaPlugin;
 
+/**
+ * WolfRanger
+ * @author hinadamari
+ */
 public class WolfRanger extends JavaPlugin
 {
 
-    public HashMap<DyeColor, Double> config = new HashMap<DyeColor, Double>();
+    public static HashMap<DyeColor, Double> config = new HashMap<DyeColor, Double>();
     public final static Logger log = Logger.getLogger("Minecraft");
 
     private File pluginFolder;
     private File configFile;
 
+    /**
+     * プラグイン起動処理
+     */
     public void onEnable()
     {
 
@@ -37,11 +44,17 @@ public class WolfRanger extends JavaPlugin
 
     }
 
+    /**
+     * プラグイン停止処理
+     */
     public void onDisable()
     {
         this.getServer().getScheduler().cancelTasks(this);
     }
 
+    /**
+     * コンフィグファイル作成処理
+     */
     private void createConfig() {
         if (!pluginFolder.exists()) {
             try {
@@ -60,6 +73,9 @@ public class WolfRanger extends JavaPlugin
         }
     }
 
+    /**
+     * コンフィグファイル読込処理
+     */
     private void loadConfig() {
 
         config.clear();
@@ -70,6 +86,9 @@ public class WolfRanger extends JavaPlugin
 
     }
 
+    /**
+     * コマンド呼出時処理
+     */
     @EventHandler
     public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args)
     {
@@ -77,6 +96,7 @@ public class WolfRanger extends JavaPlugin
         {
             if(args.length > 0)
             {
+            	// コンフィグ再読込
                 if(args[0].equalsIgnoreCase("Reload"))
                 {
                     if(!sender.hasPermission("wolfranger.reload"))
@@ -84,6 +104,7 @@ public class WolfRanger extends JavaPlugin
                         sender.sendMessage("You don't have predatorywolf.reload");
                         return true;
                     }
+                    this.reloadConfig();
                     loadConfig();
                     sender.sendMessage(ChatColor.GREEN + "WolfRanger has been reloaded.");
                     return true;
@@ -91,5 +112,9 @@ public class WolfRanger extends JavaPlugin
             }
         }
         return false;
+    }
+
+    public static HashMap<DyeColor, Double> getConfigData(){
+        return config;
     }
 }
