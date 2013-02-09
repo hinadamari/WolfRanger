@@ -1,19 +1,20 @@
 package hinadamari.wolfranger;
 
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.entity.Damageable;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Monster;
 import org.bukkit.entity.Wolf;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.inventory.ItemStack;
 
@@ -25,7 +26,6 @@ public class WolfRangerEventListener implements Listener
 {
     public WolfRanger plugin;
     public final static Logger log = Logger.getLogger("Minecraft");
-    public ArrayList<Integer> eventflg = new ArrayList<Integer>();
 
     public WolfRangerEventListener(WolfRanger instance)
     {
@@ -38,8 +38,6 @@ public class WolfRangerEventListener implements Listener
      */
     @EventHandler(priority= EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityAttack(EntityDamageByEntityEvent event) {
-
-        if (eventflg.contains(event.getDamager().getEntityId())) return;
 
         if (event.getDamager().getType() == EntityType.WOLF  && event.getCause() == DamageCause.ENTITY_ATTACK) {
 
@@ -69,13 +67,11 @@ public class WolfRangerEventListener implements Listener
                 case BLACK:
                 case GRAY:
                 case SILVER:
-                    // 敵に致命的な追加ダメージ
+                    // 敵に致命的なダメージ
                     if (enemy.getHealth() - event.getDamage() <= 0) break; // 敵死亡時は中止
                     rate = WolfRanger.getConfigData().get(DyeColor.BLACK);
                     if (rate == 0 || Math.random() > rate) break; // 当たり抽選
-                    eventflg.add(event.getDamager().getEntityId());
-                    enemy.damage(1000, attacker);
-                    eventflg.remove(eventflg.indexOf(event.getDamager().getEntityId()));
+                    event.setDamage(1000);
             }
 
             switch (attacker.getCollarColor()) {
@@ -83,9 +79,7 @@ public class WolfRangerEventListener implements Listener
                 case YELLOW:
                     // 敵に着火
                     if (enemy.getHealth() - event.getDamage() <= 0) break; // 敵死亡時は中止
-                    eventflg.add(event.getDamager().getEntityId());
                     enemy.setFireTicks(100);
-                    eventflg.remove(eventflg.indexOf(event.getDamager().getEntityId()));
             }
 
             switch (attacker.getCollarColor()) {
@@ -98,27 +92,14 @@ public class WolfRangerEventListener implements Listener
                     if (enemy.getHealth() - event.getDamage() <= 0) break; // 敵死亡時は中止
                     rate = WolfRanger.getConfigData().get(DyeColor.RED);
                     if (rate == 1) break;
-                    eventflg.add(event.getDamager().getEntityId());
-                    enemy.damage((int)Math.floor(event.getDamage() * rate), attacker);
-                    eventflg.remove(eventflg.indexOf(event.getDamager().getEntityId()));
-            }
-
-            switch (attacker.getCollarColor()) {
-                case CYAN:
-                case GREEN:
-                case LIME:
-                    // メロンを落とさせる
-                    if (enemy.getHealth() - event.getDamage() > 0) break; // 敵死亡時のみ処理を続ける
-                    rate = WolfRanger.getConfigData().get(DyeColor.GREEN);
-                    if (rate == 0 || Math.random() > rate) break; // 当たり抽選
-                    ItemStack drop = new ItemStack(Material.MELON_BLOCK, 1);
-                    World world = enemy.getWorld();
-                    world.dropItem(enemy.getLocation(), drop);
+                    event.setDamage((int)Math.floor(event.getDamage() * rate));
             }
 
         } else if (event.getEntity().getType() == EntityType.WOLF  && event.getCause() == DamageCause.ENTITY_EXPLOSION) {
 
             // ■クリーパーがオオカミに攻撃した時の追加効果
+
+            double rate = 0;
 
             Wolf wan = (Wolf) event.getEntity();
 
@@ -126,8 +107,54 @@ public class WolfRangerEventListener implements Listener
                 case CYAN:
                 case GREEN:
                 case LIME:
-                    // クリーパーの爆破ダメージを無効化
-                    event.setCancelled(true);
+                    // クリーパーの爆破ダメージを軽減または無効化
+                    rate = WolfRanger.getConfigData().get(DyeColor.LIME);
+                    if (rate >= 1) {
+                        event.setCancelled(true);
+                    } else {
+                        event.setDamage((int)Math.floor(event.getDamage() * (1 - rate)));
+                    }
+
+            }
+
+        }
+
+    }
+
+    /**
+     * 敵死亡時処理
+     * @param event
+     */
+    @EventHandler(priority= EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onEntityDeath(EntityDeathEvent event) {
+
+        EntityDamageEvent cause = event.getEntity().getLastDamageCause();
+
+        if (!(event.getEntity() instanceof Monster)) return;
+
+        if (cause == null) return;
+
+        if (cause instanceof EntityDamageByEntityEvent) {
+
+            Entity killer = ((EntityDamageByEntityEvent) cause).getDamager();
+
+            if (killer instanceof Wolf && ((Wolf) killer).isTamed()){
+
+                Wolf wan = (Wolf)killer;
+                double rate = 0;
+
+                switch (wan.getCollarColor()) {
+                    case CYAN:
+                    case GREEN:
+                    case LIME:
+                        // メロンを落とさせる
+                        log.info("melon");
+                        rate = WolfRanger.getConfigData().get(DyeColor.GREEN);
+                        if (rate == 0 || Math.random() > rate) break; // 当たり抽選
+                        ItemStack drop = new ItemStack(Material.MELON_BLOCK, 1);
+                        event.getDrops().add(drop);
+                }
+
             }
 
         }
@@ -144,6 +171,7 @@ public class WolfRangerEventListener implements Listener
         if (event.getEntity().getType() != EntityType.WOLF) return;
 
         Wolf wan = (Wolf) event.getEntity();
+        double rate = 0;
 
         if (!wan.isTamed()) return;
 
@@ -158,15 +186,20 @@ public class WolfRangerEventListener implements Listener
 
         } else if (event.getCause() == DamageCause.LAVA) {
 
-            // 熔岩によるダメージを無効化
+            // 熔岩によるダメージを軽減または無効化
             switch (wan.getCollarColor()) {
                 case BROWN:
-                    event.setCancelled(true);
+                    rate = WolfRanger.getConfigData().get(DyeColor.BROWN);
+                    if (rate >= 1) {
+                        event.setCancelled(true);
+                    } else {
+                        event.setDamage((int)Math.floor(event.getDamage() * (1 - rate)));
+                    }
             }
 
         } else if (event.getCause() == DamageCause.FALL) {
 
-            // 落下によるダメージを無効化
+            // 落下によるダメージを軽減または無効化
             switch (wan.getCollarColor()) {
                 case GRAY:
                 case SILVER:
@@ -174,7 +207,12 @@ public class WolfRangerEventListener implements Listener
                 case LIME:
                 case PINK:
                 case WHITE:
-                    event.setCancelled(true);
+                    rate = WolfRanger.getConfigData().get(DyeColor.BROWN);
+                    if (rate >= 1) {
+                        event.setCancelled(true);
+                    } else {
+                        event.setDamage((int)Math.floor(event.getDamage() * (1 - rate)));
+                    }
             }
 
         }

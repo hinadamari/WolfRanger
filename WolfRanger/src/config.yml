@@ -9,3 +9,7 @@ black: 0.2
 red: 2
 # rate of drop (melon)
 green: 0.3
+# rate of protection
+creeper: 0.5
+fall: 0.3
+lava: 0.3

@@ -40,7 +40,7 @@ public class WolfRanger extends JavaPlugin
         new WolfRangerEventListener(this);
         getServer().getPluginManager().registerEvents(new WolfRangerEventListener(this), this);
 
-        log.info("[WolfRanger] PredatoryWolf is enabled!");
+        log.info("[WolfRanger] WolfRanger is enabled!");
 
     }
 
@@ -84,6 +84,10 @@ public class WolfRanger extends JavaPlugin
         config.put(DyeColor.RED, Math.max(1, getConfig().getDouble("red")));
         config.put(DyeColor.GREEN, Math.max(1, getConfig().getDouble("green")));
 
+        config.put(DyeColor.LIME, Math.max(0, getConfig().getDouble("creeper")));
+        config.put(DyeColor.WHITE, Math.max(0, getConfig().getDouble("fall")));
+        config.put(DyeColor.BROWN, Math.max(0, getConfig().getDouble("lava")));
+
     }
 
     /**
@@ -96,12 +100,12 @@ public class WolfRanger extends JavaPlugin
         {
             if(args.length > 0)
             {
-            	// コンフィグ再読込
+                // コンフィグ再読込
                 if(args[0].equalsIgnoreCase("Reload"))
                 {
                     if(!sender.hasPermission("wolfranger.reload"))
                     {
-                        sender.sendMessage("You don't have predatorywolf.reload");
+                        sender.sendMessage("You don't have wolfranger.reload");
                         return true;
                     }
                     this.reloadConfig();
